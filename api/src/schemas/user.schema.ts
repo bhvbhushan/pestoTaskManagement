@@ -32,6 +32,15 @@ export const UserUpdateSchema = UserCreateSchema.pick({
 
 export type UserUpdateInput = z.infer<typeof UserUpdateSchema>;
 
+export const UserPasswordUpdateSchema = z
+  .object({
+    oldPassword: z.string(),
+    newPassword: z.string().min(8).max(255),
+  })
+  .openapi("UserPasswordUpdateSchema");
+
+export type UserPasswordUpdateInput = z.infer<typeof UserPasswordUpdateSchema>;
+
 export const LoginSchema = z
   .object({
     email: z.string().email().openapi({

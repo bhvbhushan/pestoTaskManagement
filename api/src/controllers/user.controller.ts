@@ -1,54 +1,94 @@
 import { Request, Response, NextFunction } from "express";
-import { compare } from "@/utils";
-import { getUserByEmail } from "@/services";
-import { LoginSchema, UserCreateSchema, UserResponseSchema } from "@/schemas";
+import {
+  getUserById,
+  checkOldPassword,
+  updateUserPassword,
+  updateUser,
+} from "@/services";
+import { BadRequest, NotAuthorized, NotFound } from "@/utils";
+import { UserUpdateSchema } from "@/schemas";
+import { PASS_NOT_MATCH, SUCC_PASS_CHANGE, USER_NOT_FOUND } from "@/constants";
 
-// Login to the system
-export const loginHandler = async (
+// GET /api/profile/me (Get Current User)
+export const getCurrentUserHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const parsedBody = LoginSchema.safeParse(req.body);
+    const user = await getUserById(req?.user?.id);
+
+    if (!user) {
+      throw new NotFound(USER_NOT_FOUND);
+    }
+
+    const response = {
+      status: 200,
+      data: user,
+    };
+
+    return res.status(response.status).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/profile/me/password (Update Password)
+export const updatePasswordHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // check old password
+    const isMatch = await checkOldPassword(req.user?.id, oldPassword);
+
+    if (!isMatch) {
+      throw new BadRequest(PASS_NOT_MATCH);
+    }
+
+    // update password
+    await updateUserPassword(req.user?.id, newPassword);
+
+    return res.status(200).json({
+      status: 200,
+      message: SUCC_PASS_CHANGE,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PUT /api/users/:id (Update User)
+export const updateUserHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { id } = req.params;
+
+  try {
+    const parsedBody = UserUpdateSchema.safeParse(req.body);
     if (!parsedBody.success) {
       return res.status(400).json(parsedBody.error.errors);
     }
 
-    const user = await getUserByEmail(parsedBody.data.email);
+    // update user
+    const user = await updateUser(id, parsedBody.data);
 
-    const errorResponse = {
-      status: 400,
-      message: "Invalid credentials",
-      instructions: "Please check your credentials and try again",
-    };
-
-    // user not found
     if (!user) {
-      return res.status(errorResponse.status).json(errorResponse);
+      throw new NotFound(USER_NOT_FOUND);
     }
-
-    // validate password
-    const isPasswordValid = await passwordUtil.compare(
-      parsedBody.data.password,
-      user.password
-    );
-    if (!isPasswordValid) {
-      res.status(errorResponse.status).json(errorResponse);
-    }
-
-    // generate access token
-    const token = await userService.generateToken(
-      UserResponseSchema.parse(user)
-    );
 
     const response = {
       status: 200,
-      message: "Login successful",
-      token,
+      data: user,
     };
-    res.status(response.status).json(response);
-  } catch (e) {
-    next(e);
+
+    return res.status(response.status).json(response);
+  } catch (error) {
+    next(error);
   }
 };
