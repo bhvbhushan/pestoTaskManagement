@@ -1,9 +1,9 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { customMorgan } from "@/middlewares";
-import swaggerJSDoc from "swagger-jsdoc";
+
 import swaggerUI from "swagger-ui-express";
-import swaggerOptions from "./swagger";
+
 import {
   Logger,
   BadRequest,
@@ -12,19 +12,17 @@ import {
   NotFound,
 } from "@/utils";
 import { z } from "zod";
+import router from "@/routes";
 
 const app: Express = express();
 app.use(cors());
 app.use(express.json());
 app.use(customMorgan);
+app.use("/api", router);
 
 import { generateAPIDocs } from "./registry";
 
 const apiDocs = generateAPIDocs();
-console.log("API Docs: ", JSON.stringify(apiDocs, null, 2));
-
-const swaggerSpec = swaggerJSDoc(swaggerOptions);
-// console.log('Swagger Spec: ', JSON.stringify(swaggerSpec, null, 2));
 
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(apiDocs));
 
