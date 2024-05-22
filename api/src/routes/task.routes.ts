@@ -1,51 +1,66 @@
 import { Router } from "express";
 import { registry } from "@/registry";
 import {
-  getAllTaskHandler,
-  getCurrentUserHandler,
-  updatePasswordHandler,
+  createTaskHandler,
+  deleteTaskHandler,
+  getTaskByIdHandler,
+  updateTaskHandler,
 } from "@/controllers";
 import {
-  GET_PROFILE,
+  TASK_PATH,
+  CREATE_TASK,
+  POST,
+  TASK,
   SUCC,
-  BAD_REQ,
+  OBJ,
+  STR,
   INVALID_INPUT,
+  BAD_REQ,
   NOT_FOUND,
   USER_NOT_FOUND,
-  CHANGE_PASS,
-  TASKS_PROFILE_PATH,
-  PROFILE_PATH,
+  TASK_BY_ID_PATH,
+  PUT,
+  UPDATE_TASK,
   GET,
-  PROFILE,
-  STR,
-  OBJ,
+  GET_TASK_BY_ID,
+  DELETE,
+  DELETE_TASK,
 } from "@/constants";
 import {
-  TasksResponseSchema,
-  UserPasswordUpdateSchema,
-  UserResponseSchema,
+  TaskCreateSchema,
+  TaskResponseSchema,
+  TaskUpdateSchema,
 } from "@/schemas";
 
 const router = Router();
 
-router.get("/me", getCurrentUserHandler);
+router.post("/", createTaskHandler);
 registry.registerPath({
-  path: PROFILE_PATH,
-  method: GET,
-  description: GET_PROFILE,
-  tags: [PROFILE],
+  path: TASK_PATH,
+  method: POST,
+  description: CREATE_TASK,
+  tags: [TASK],
   security: [
     {
       bearerAuth: [],
     },
   ],
   parameters: [],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: TaskCreateSchema,
+        },
+      },
+    },
+  },
   responses: {
-    200: {
+    201: {
       description: SUCC,
       content: {
         "application/json": {
-          schema: UserResponseSchema,
+          schema: TaskResponseSchema,
         },
       },
     },
@@ -78,23 +93,32 @@ registry.registerPath({
   },
 });
 
-router.post("/me/password", updatePasswordHandler);
+router.put("/:id", updateTaskHandler);
 registry.registerPath({
-  path: "/api/profile/me/password",
-  method: "post",
-  description: CHANGE_PASS,
-  tags: ["Profile"],
+  path: TASK_BY_ID_PATH,
+  method: PUT,
+  description: UPDATE_TASK,
+  tags: [TASK],
   security: [
     {
       bearerAuth: [],
     },
   ],
-  parameters: [],
+  parameters: [
+    {
+      in: "path",
+      name: "id",
+      required: true,
+      schema: {
+        type: "string",
+      },
+    },
+  ],
   request: {
     body: {
       content: {
         "application/json": {
-          schema: UserPasswordUpdateSchema,
+          schema: TaskUpdateSchema,
         },
       },
     },
@@ -104,7 +128,7 @@ registry.registerPath({
       description: SUCC,
       content: {
         "application/json": {
-          schema: UserResponseSchema,
+          schema: TaskResponseSchema,
         },
       },
     },
@@ -113,9 +137,9 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: {
-            type: "object",
+            type: OBJ,
             properties: {
-              message: { type: "string", example: INVALID_INPUT },
+              message: { type: STR, example: INVALID_INPUT },
             },
           },
         },
@@ -137,24 +161,33 @@ registry.registerPath({
   },
 });
 
-router.get("/me/tasks", getAllTaskHandler);
+router.get("/:id", getTaskByIdHandler);
 registry.registerPath({
-  path: TASKS_PROFILE_PATH,
-  method: "get",
-  description: GET_PROFILE,
-  tags: ["Profile"],
+  path: TASK_BY_ID_PATH,
+  method: GET,
+  description: GET_TASK_BY_ID,
+  tags: [TASK],
   security: [
     {
       bearerAuth: [],
     },
   ],
-  parameters: [],
+  parameters: [
+    {
+      in: "path",
+      name: "id",
+      required: true,
+      schema: {
+        type: "string",
+      },
+    },
+  ],
   responses: {
     200: {
       description: SUCC,
       content: {
         "application/json": {
-          schema: TasksResponseSchema,
+          schema: TaskResponseSchema,
         },
       },
     },
@@ -163,9 +196,68 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: {
+            type: OBJ,
+            properties: {
+              message: { type: STR, example: INVALID_INPUT },
+            },
+          },
+        },
+      },
+    },
+    404: {
+      description: NOT_FOUND,
+      content: {
+        "application/json": {
+          schema: {
             type: "object",
             properties: {
-              message: { type: "string", example: INVALID_INPUT },
+              message: { type: "string", example: USER_NOT_FOUND },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+router.delete("/:id", deleteTaskHandler);
+registry.registerPath({
+  path: TASK_BY_ID_PATH,
+  method: DELETE,
+  description: DELETE_TASK,
+  tags: [TASK],
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
+  parameters: [
+    {
+      in: "path",
+      name: "id",
+      required: true,
+      schema: {
+        type: "string",
+      },
+    },
+  ],
+  responses: {
+    200: {
+      description: SUCC,
+      content: {
+        "application/json": {
+          schema: TaskResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: BAD_REQ,
+      content: {
+        "application/json": {
+          schema: {
+            type: OBJ,
+            properties: {
+              message: { type: STR, example: INVALID_INPUT },
             },
           },
         },

@@ -106,3 +106,13 @@ export const updateUserPassword = async (id: string, payload: string) => {
 
   return user;
 };
+
+//Get all tasks of a User
+export const getUserTasks = async (userId: string) => {
+  const tasks = await prisma.tasks.findMany({
+    where: {
+      userId,
+    },
+  });
+  return tasks;
+};
